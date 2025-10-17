@@ -135,34 +135,25 @@ export function ClaimPDF({ claim }: ClaimPDFProps) {
                   {claim.adjustor || 'N/A'}
                 </Text>
               </View>
-            </View>
 
-            <View style={styles.column}>
               <View style={styles.fieldGroup}>
                 <Text style={styles.fieldLabel}>Client Name</Text>
                 <Text style={styles.fieldValue}>
                   {claim.claimant.name || 'N/A'}
                 </Text>
               </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Email</Text>
-                <Text style={styles.fieldValue}>
-                  {claim.claimant.email}
-                </Text>
-              </View>
             </View>
 
             <View style={styles.column}>
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Phone</Text>
+                <Text style={styles.fieldLabel}>Client Phone</Text>
                 <Text style={styles.fieldValue}>
                   {claim.clientPhone || 'N/A'}
                 </Text>
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Address</Text>
+                <Text style={styles.fieldLabel}>Client Address</Text>
                 <Text style={styles.fieldValue}>
                   {claim.clientAddress || 'N/A'}
                 </Text>
