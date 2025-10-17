@@ -52,30 +52,35 @@ export default async function DashboardPage() {
               value={metrics.PENDING}
               total={totalClaims}
               variant="pending"
+              href="/claims?status=PENDING"
             />
             <MetricCard
               title="Under Review"
               value={metrics.UNDER_REVIEW}
               total={totalClaims}
               variant="under-review"
+              href="/claims?status=UNDER_REVIEW"
             />
             <MetricCard
               title="Approved Claims"
               value={metrics.APPROVED}
               total={totalClaims}
               variant="approved"
+              href="/claims?status=APPROVED"
             />
             <MetricCard
               title="Rejected Claims"
               value={metrics.REJECTED}
               total={totalClaims}
               variant="rejected"
+              href="/claims?status=REJECTED"
             />
             <MetricCard
               title="Closed Claims"
               value={metrics.CLOSED}
               total={totalClaims}
               variant="closed"
+              href="/claims?status=CLOSED"
             />
           </div>
         </div>

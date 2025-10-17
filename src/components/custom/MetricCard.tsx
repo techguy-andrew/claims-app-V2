@@ -5,12 +5,14 @@ import {
   CardTitle,
 } from '@/components/active-components/card'
 import { Badge } from '@/components/active-components/badge'
+import Link from 'next/link'
 
 interface MetricCardProps {
   title: string
   value: number
   total: number
   variant: 'pending' | 'under-review' | 'approved' | 'rejected' | 'closed'
+  href?: string
 }
 
 const VARIANT_CONFIG = {
@@ -41,12 +43,12 @@ const VARIANT_CONFIG = {
   }
 }
 
-export function MetricCard({ title, value, total, variant }: MetricCardProps) {
+export function MetricCard({ title, value, total, variant, href }: MetricCardProps) {
   const config = VARIANT_CONFIG[variant]
   const percentage = total > 0 ? Math.round((value / total) * 100) : 0
 
-  return (
-    <Card>
+  const cardContent = (
+    <Card className={href ? 'transition-all hover:shadow-md cursor-pointer' : ''}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         <div className={`rounded-full p-2 ${config.iconBg}`}>
@@ -71,4 +73,10 @@ export function MetricCard({ title, value, total, variant }: MetricCardProps) {
       </CardContent>
     </Card>
   )
+
+  if (href) {
+    return <Link href={href}>{cardContent}</Link>
+  }
+
+  return cardContent
 }

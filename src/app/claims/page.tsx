@@ -3,11 +3,18 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { SearchableClaims } from '@/components/custom/SearchableClaims'
+import type { ClaimStatus } from '@prisma/client'
 
 // Force dynamic rendering - don't statically generate this page
 export const dynamic = 'force-dynamic'
 
-export default async function ClaimsPage() {
+interface ClaimsPageProps {
+  searchParams: Promise<{ status?: string }>
+}
+
+export default async function ClaimsPage({ searchParams }: ClaimsPageProps) {
+  const params = await searchParams
+  const initialStatus = params.status as ClaimStatus | 'all' | undefined
   // Fetch claims from database
   const claims = await prisma.claim.findMany({
     include: {
@@ -39,7 +46,7 @@ export default async function ClaimsPage() {
             </div>
           </div>
 
-          <SearchableClaims initialClaims={claims} />
+          <SearchableClaims initialClaims={claims} initialStatus={initialStatus} />
         </div>
       </div>
     </div>

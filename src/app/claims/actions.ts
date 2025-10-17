@@ -1,11 +1,15 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import type { ClaimStatus } from '@prisma/client'
 
-export async function searchClaims(searchTerm: string) {
+export async function searchClaims(searchTerm: string, statusFilter?: ClaimStatus | 'all') {
   if (!searchTerm || searchTerm.trim() === '') {
-    // Return all claims if no search term
+    // Return all claims if no search term, optionally filtered by status
     return await prisma.claim.findMany({
+      where: statusFilter && statusFilter !== 'all'
+        ? { status: statusFilter }
+        : undefined,
       include: {
         claimant: true,
         items: true,
@@ -17,40 +21,50 @@ export async function searchClaims(searchTerm: string) {
   }
 
   const term = searchTerm.trim()
-  const termUpper = term.toUpperCase()
 
-  // Build status filter based on search term (word boundary matching)
-  const statusFilters = []
-  if (termUpper.includes('PEND')) statusFilters.push({ status: 'PENDING' as const })
-  if (termUpper.includes('UNDER') || termUpper.includes('REVIEW')) statusFilters.push({ status: 'UNDER_REVIEW' as const })
-  if (termUpper.includes('APPROV')) statusFilters.push({ status: 'APPROVED' as const })
-  if (termUpper.includes('REJECT')) statusFilters.push({ status: 'REJECTED' as const })
-  if (termUpper.includes('CLOSE')) statusFilters.push({ status: 'CLOSED' as const })
+  // Map status text search to enum values
+  const statusTextMap: Record<string, ClaimStatus> = {
+    'pending': 'PENDING',
+    'under review': 'UNDER_REVIEW',
+    'approved': 'APPROVED',
+    'rejected': 'REJECTED',
+    'closed': 'CLOSED',
+  }
 
-  // Hybrid search strategy (optimized for performance and UX):
-  // - startsWith: structured/predictable fields (faster with indexes)
-  // - contains: free-text and human name fields (flexible matching)
-  // - Excludes: claim items (not searched)
+  // Check if search term matches a status
+  const matchedStatus = Object.entries(statusTextMap).find(([key]) =>
+    key.toLowerCase().includes(term.toLowerCase())
+  )?.[1]
+
+  // Word boundary matching for names + claim numbers + status:
+  // - Claim number: prefix match (startsWith)
+  // - Claimant name (first word): prefix match for first names
+  // - Claimant name (subsequent words): space-prefixed match for last names
+  // - Status: exact match if search term matches a status keyword
+  // Examples: "Chen" matches "Michael Chen", "Michael" matches "Michael Chen", "pending" matches PENDING status
   return await prisma.claim.findMany({
     where: {
-      OR: [
-        // Structured fields: startsWith for index optimization
-        { claimNumber: { startsWith: term, mode: 'insensitive' } },
-        { clientPhone: { startsWith: term, mode: 'insensitive' } },
-        { insuranceCompany: { startsWith: term, mode: 'insensitive' } },
-        { claimant: { email: { startsWith: term, mode: 'insensitive' } } },
+      AND: [
+        // Apply status filter if provided
+        statusFilter && statusFilter !== 'all'
+          ? { status: statusFilter }
+          : {},
+        // Apply search term to OR conditions
+        {
+          OR: [
+            // Claim number prefix match
+            { claimNumber: { startsWith: term, mode: 'insensitive' } },
 
-        // Human name fields: contains for flexible matching
-        { claimant: { name: { contains: term, mode: 'insensitive' } } },
-        { adjustor: { contains: term, mode: 'insensitive' } },
+            // Name: first word (first name)
+            { claimant: { name: { startsWith: term, mode: 'insensitive' } } },
 
-        // Free-text claim fields: contains for full-text flexibility
-        { title: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-        { clientAddress: { contains: term, mode: 'insensitive' } },
+            // Name: any subsequent word (last name, middle name, etc.)
+            { claimant: { name: { contains: ` ${term}`, mode: 'insensitive' } } },
 
-        // Status filters based on keyword matching
-        ...statusFilters
+            // Status: match if search term matches a status keyword
+            ...(matchedStatus ? [{ status: matchedStatus }] : []),
+          ]
+        }
       ]
     },
     include: {
