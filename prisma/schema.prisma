@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// User model for claims management
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  claims Claim[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+// Claims model for claims management
+model Claim {
+  id                String      @id @default(cuid())
+  title             String
+  description       String?     @db.Text
+  amount            Decimal?    @db.Decimal(65,30)
+  status            ClaimStatus @default(PENDING)
+  claimNumber       String      @unique @default(cuid())
+  insuranceCompany  String?
+  adjustor          String?
+  clientPhone       String?
+  clientAddress     String?     @db.Text
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  claimant   User   @relation(fields: [claimantId], references: [id], onDelete: Cascade)
+  claimantId String
+  items      Item[]
+
+  @@index([claimantId])
+  @@index([status, createdAt])
+  @@index([claimNumber])
+}
+
+// Items model for claim items
+model Item {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  claim   Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claimId String
+
+  @@index([claimId])
+}
+
+enum ClaimStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CLOSED
+}
